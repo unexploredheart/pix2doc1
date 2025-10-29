@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pix2doc.com</title>
+    <!-- jsPDF library for creating PDFs from images -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- pdf-lib library for merging existing PDFs -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- FOUC (Flash of Unstyled Content) Prevention for Dark Mode -->
+    <script>
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+</head>
+<body>
+
+    <div class="container">
+
+        <!-- Header -->
+        <header class="header">
+            <h1 class="title">pix2doc.com</h1>
+            <p class="subtitle">Client-Side PDF Tools. Your files never leave your browser.</p>
+
+            <!-- Dark Mode Toggle -->
+            <button id="dark-mode-toggle" class="dark-toggle">
+                <!-- Sun Icon -->
+                <svg id="sun-icon" xmlns="http://www.w3.org/2000/svg" class="icon hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                <!-- Moon Icon -->
+                <svg id="moon-icon" xmlns="http://www.w3.org/2000/svg" class="icon hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+            </button>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="tabs">
+            <div class="tab-list">
+                <button id="tab-image-to-pdf" class="tab-btn active-tab" onclick="showTab('image-to-pdf')">
+                    Image to PDF
+                </button>
+                <button id="tab-merge-pdf" class="tab-btn" onclick="showTab('merge-pdf')">
+                    Merge PDFs
+                </button>
+                <button id="tab-split-pdf" class="tab-btn" onclick="showTab('split-pdf')">
+                    Split PDF
+                </button>
+                <button id="tab-e-sign-pdf" class="tab-btn" onclick="showTab('e-sign-pdf')">
+                    E-Sign PDF
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+
+            <!-- Tool 1: Image to PDF Converter -->
+            <section id="tool-image-to-pdf" class="tool-section">
+                <h2 class="section-title">Convert Images to PDF</h2>
+                
+                <!-- File Input Dropzone -->
+                <div id="image-dropzone" class="dropzone">
+                    <p class="dropzone-text">Drag & drop your PNG, JPEG, BMP, GIF, or WEBP files here, or click to select</p>
+                    <label for="image-upload" class="file-upload-label">Select Images</label>
+                    <input type="file" id="image-upload" accept="image/png, image/jpeg, image/bmp, image/gif, image/webp" multiple>
+                </div>
+
+                <!-- File List -->
+                <div id="image-file-list" class="file-list">
+                    <!-- File items will be injected here by JS -->
+                </div>
+
+                <!-- Settings -->
+                <div id="image-settings" class="settings hidden">
+                    <div class="settings-grid">
+                        <!-- Quality Setting -->
+                        <div class="setting-group">
+                            <label for="pdf-quality" class="setting-label">Image Quality (10 = Low, 100 = High)</label>
+                            <div class="quality-control">
+                                <input type="range" id="pdf-quality" min="10" max="100" value="80" class="quality-slider">
+                                <span id="quality-value" class="quality-value">80</span>
+                            </div>
+                        </div>
+                        <!-- Page Size -->
+                        <div class="setting-group">
+                            <label for="page-size" class="setting-label">Page Size</label>
+                            <select id="page-size" class="setting-select">
+                                <option value="a4">A4</option>
+                                <option value="letter">Letter</option>
+                            </select>
+                        </div>
+                        <!-- Page Orientation -->
+                        <div class="setting-group">
+                            <label class="setting-label">Page Orientation</label>
+                            <div class="radio-group">
+                                <label class="radio-label"><input type="radio" name="orientation" value="p" checked> Portrait</label>
+                                <label class="radio-label"><input type="radio" name="orientation" value="l"> Landscape</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Button -->
+                    <div class="action-center">
+                        <button id="convert-to-pdf-btn" class="action-btn">
+                            Convert to PDF
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tool 2: Merge PDF Files -->
+            <section id="tool-merge-pdf" class="tool-section hidden">
+                <h2 class="section-title">Merge PDF Files</h2>
+                
+                <!-- File Input Dropzone -->
+                <div id="pdf-dropzone" class="dropzone">
+                    <p class="dropzone-text">Drag & drop your PDF files here, or click to select</p>
+                    <label for="pdf-upload" class="file-upload-label">Select PDFs</label>
+                    <input type="file" id="pdf-upload" accept="application/pdf" multiple>
+                </div>
+
+                <!-- File List -->
+                <div id="pdf-file-list" class="file-list">
+                    <!-- File items will be injected here by JS -->
+                </div>
+
+                <!-- Settings -->
+                <div id="merge-settings" class="settings hidden">
+                    <p class="settings-note">Drag and drop files above to re-order them.</p>
+                    <!-- Action Button -->
+                    <div class="action-center">
+                        <button id="merge-pdf-btn" class="action-btn">
+                            Merge PDFs
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tool 3: Split PDF -->
+            <section id="tool-split-pdf" class="tool-section hidden">
+                <h2 class="section-title">Split a PDF File</h2>
+                
+                <!-- File Input Dropzone -->
+                <div id="split-dropzone" class="dropzone">
+                    <p class="dropzone-text">Drag & drop your PDF file here, or click to select</p>
+                    <label for="split-upload" class="file-upload-label">Select PDF</label>
+                    <input type="file" id="split-upload" accept="application/pdf">
+                </div>
+
+                <div id="split-file-info" class="file-info hidden">
+                    <p class="info-text">File: <span id="split-file-name" class="info-value"></span></p>
+                    <p class="info-text">Total Pages: <span id="split-total-pages" class="info-value"></span></p>
+                </div>
+
+                <!-- Settings -->
+                <div id="split-settings" class="settings hidden">
+                    <div class="setting-group">
+                        <label for="page-range" class="setting-label">Page Ranges to Keep</label>
+                        <input type="text" id="page-range" placeholder="e.g., 1-3, 5, 8-end" class="setting-input">
+                        <p class="setting-help">Use commas to separate pages or ranges. Use "end" for the last page.</p>
+                    </div>
+                    
+                    <!-- Action Button -->
+                    <div class="action-center">
+                        <button id="split-pdf-btn" class="action-btn">
+                            Split PDF
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tool 4: E-Sign PDF -->
+            <section id="tool-e-sign-pdf" class="tool-section hidden">
+                <h2 class="section-title">Sign a PDF File</h2>
+                
+                <!-- File Input Dropzone -->
+                <div id="sign-dropzone" class="dropzone">
+                    <p class="dropzone-text">Drag & drop your PDF file here, or click to select</p>
+                    <label for="sign-upload" class="file-upload-label">Select PDF</label>
+                    <input type="file" id="sign-upload" accept="application/pdf">
+                </div>
+
+                <div id="sign-file-info" class="file-info hidden">
+                    <p class="info-text">File: <span id="sign-file-name" class="info-value"></span></p>
+                </div>
+
+                <!-- Settings -->
+                <div id="sign-settings" class="settings hidden">
+                    <!-- Signature Pad -->
+                    <div class="signature-section">
+                        <label class="setting-label">Draw your signature below:</label>
+                        <canvas id="signature-canvas" width="400" height="150" class="signature-canvas"></canvas>
+                        <div class="signature-controls">
+                            <button id="clear-sig-btn" class="clear-btn">Clear Signature</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Position Settings -->
+                    <div class="position-grid">
+                        <div class="setting-group">
+                            <label for="sig-page" class="setting-label">Page Number</label>
+                            <input type="number" id="sig-page" value="1" min="1" class="setting-input">
+                        </div>
+                        <div class="setting-group">
+                            <label for="sig-x" class="setting-label">X Position (from left)</label>
+                            <input type="number" id="sig-x" value="50" class="setting-input">
+                        </div>
+                        <div class="setting-group">
+                            <label for="sig-y" class="setting-label">Y Position (from top)</label>
+                            <input type="number" id="sig-y" value="50" class="setting-input">
+                        </div>
+                    </div>
+                    <p class="setting-help center">Positions are in 'points' (like pixels) from the top-left corner of the page.</p>
+
+                    <!-- Action Button -->
+                    <div class="action-center">
+                        <button id="download-signed-pdf-btn" class="action-btn">
+                            Download Signed PDF
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Loading Indicator -->
+            <div id="loading-overlay" class="loading-overlay hidden">
+                <div class="loading-content">
+                    <div class="spinner"></div>
+                    <p id="loading-text" class="loading-text">Processing...</p>
+                </div>
+            </div>
+
+            <!-- Error Message -->
+            <div id="error-message" class="error-message hidden">
+                <!-- Error content here -->
+            </div>
+
+        </main>
+
+        <!-- Privacy Modal -->
+        <div id="privacy-modal" class="modal hidden">
+            <div id="modal-overlay" class="modal-overlay"></div>
+            
+            <div class="modal-wrapper">
+                <div class="modal-content">
+                    <!-- Modal Header -->
+                    <div class="modal-header">
+                        <h3 class="modal-title">Privacy & Security</h3>
+                        <button id="close-modal-btn" class="modal-close">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    <!-- Modal Body -->
+                    <div class="modal-body">
+                        <p class="modal-highlight">Your Files Are 100% Secure.</p>
+                        <p>This website operates entirely within your web browser. When you add images or PDFs, they are processed locally on your own computer.</p>
+                        <ul class="modal-list">
+                            <li><strong class="text-red">We DO NOT upload</strong> your files to any server.</li>
+                            <li><strong class="text-green">We DO NOT see</strong> or have access to your documents.</li>
+                            <li><strong class="text-green">Your data NEVER leaves</strong> your device.</li>
+                        </ul>
+                        <p>This client-side approach ensures the highest level of privacy. You can even disconnect from the internet after loading this page, and the tools will continue to work.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p class="footer-security">🔒 All processing is done 100% in your browser. Your data is never sent to a server.</p>
+            <div class="footer-links">
+                <a href="mailto:feedback@example.com?subject=Feedback for pix2doc.com" class="footer-link">Send Feedback</a>
+                <span class="footer-separator">|</span>
+                <button id="privacy-link" class="footer-link">Privacy Policy</button>
+                <span class="footer-separator">|</span>
+                <span>&copy; 2025 pix2doc.com</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Feedback Box -->
+    <div id="feedback-box" class="feedback-box">
+        <div class="feedback-trigger" onclick="toggleFeedback()">
+            💬 Feedback
+        </div>
+        <div id="feedback-form" class="feedback-form hidden">
+            <h3 class="feedback-title">Share Your Feedback</h3>
+            <textarea id="feedback-text" placeholder="Tell us what you think..." class="feedback-textarea"></textarea>
+            <div class="feedback-buttons">
+                <button onclick="submitFeedback()" class="feedback-submit">Send</button>
+                <button onclick="closeFeedback()" class="feedback-close">✕</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact Info -->
+    <div class="contact-info">
+        <p class="contact-text">Reach out to us at <a href="mailto:pix2doc@gmail.com" class="contact-link">pix2doc@gmail.com</a></p>
+    </div>
+
+    <!-- Custom JavaScript -->
+    <script src="script.js"></script>
+
+</body>
+</html>
